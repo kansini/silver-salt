@@ -92,7 +92,7 @@ export const english: Record<string, string> = {
   "你的下一张回忆，从这里开始。": "Your next memory begins here.",
   "在时光里显影 · 银盐": "Developed in time · Silver Salt",
   "为日常留一点心情。": "A little feeling for everyday life.",
-  "回到开头": "Back to top",
+  "回到顶部": "Back to top",
   "银盐 · 一段日常": "Silver Salt · A little everyday life",
   "你的浏览器不支持视频播放。": "Your browser does not support video playback.",
   "银盐可以用来做什么？": "What can I do with Silver Salt?",
