@@ -20,17 +20,25 @@ export function useFooterParallax(
                 invalidateOnRefresh: true,
             };
             gsap.fromTo(footerMedia.value!, {
-                y: () => -(download.value?.offsetHeight ?? 0) * .12,
+                y: () => -(download.value?.offsetHeight ?? 0) * .2,
             }, {
-                y: () => (download.value?.offsetHeight ?? 0) * .12,
+                y: () => (download.value?.offsetHeight ?? 0) * .2,
                 ease: 'none', scrollTrigger: trigger,
             });
             // The frame travels against the background, while copy stays still.
             gsap.fromTo(frame.value!, {
-                y: () => (download.value?.offsetHeight ?? 0) * .07,
+                y: () => (download.value?.offsetHeight ?? 0) * .16,
             }, {
-                y: () => -(download.value?.offsetHeight ?? 0) * .07,
+                y: () => -(download.value?.offsetHeight ?? 0) * .16,
                 ease: 'none', scrollTrigger: { ...trigger },
+            });
+            gsap.fromTo(frame.value!, { opacity: 0 }, {
+                opacity: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    ...trigger,
+                    end: 'top 20%',
+                },
             });
         }, download.value);
     }

@@ -1149,7 +1149,7 @@ footer {
 
 .footer-background {
   position: absolute;
-  inset: -18% 0;
+  inset: -28% 0;
   z-index: -2;
   pointer-events: none;
   will-change: transform;
@@ -1186,7 +1186,7 @@ footer {
 .footer-frame {
   position: absolute;
   top: 28%;
-  left: 7.7%;
+  left: 4.6%;
   width: 26%;
   pointer-events: none;
   z-index: 0;
@@ -1212,7 +1212,7 @@ footer {
   }
 
   .footer-frame {
-    top: 205px;
+    top: 250px;
     left: 20px;
     width: min(68vw, 340px);
   }
@@ -1227,4 +1227,8 @@ footer {
   .footer-frame {
     will-change: auto;
   }
+}
+
+.download-row > p {
+  padding-left: clamp(16px, 1vw, 20px);
 }

@@ -62,3 +62,19 @@ Validation: TypeScript/Vite build passed. Checked 40-work gallery and 30-photo f
 
 Evidence: /Users/ssflood/Documents/works/personal/silverSalt/silver_salt/promotion_output/refactored-page.png
 Final refactor result: passed.
+
+
+## Download frame and stronger parallax
+
+- Source: `/var/folders/0_/fv5sp2vn2g99y_3wcrmp4ynm0000gn/T/codex-clipboard-fe2542b5-fab8-4ea9-8bb2-ada11142aa95.jpg` (3596 × 2012).
+- Desktop implementation: `/Users/ssflood/Documents/works/personal/silverSalt/silver_salt/promotion_output/footer-frame-desktop.png` (1800 × 1007 CSS/pixels, dark, zh, download section visible).
+- Comparison: `promotion_output/footer-frame-comparison.jpg` in the silver_salt workspace; reference downsampled to 1800 × 1007 and placed beside implementation.
+- Mobile: `/Users/ssflood/Documents/works/personal/silverSalt/silver_salt/promotion_output/footer-frame-mobile.png` (390 × 844). No horizontal overflow; download CTA below the frame.
+- Typography/copy: preserved Zhuque headline, existing bilingual text and store label.
+- Layout: transparent frame at 7.7% left, 28% top, 26% section width; headline and CTA retain existing placement. Frame transparency reveals the shared landscape rather than a separate crop.
+- Colors/assets: original frame texture and footer landscape; existing dark/light overlay and accent tokens preserved. Background crop intentionally changes to provide sufficient overscan for stronger motion.
+- Comparison history: mobile frame originally overlapped the headline and paper edge obscured the first characters of the description (P2). Moved mobile frame to 250px and inset description text. Post-fix mobile screenshot confirms separation and readable text.
+- Full-view comparison confirms desktop frame, headline, CTA and footer proportions. Mobile focused screenshot confirms text does not sit on the white paper edge and CTA remains clear.
+- Interaction: native scroll changed background y from approximately -2px to -96px and frame y from +2px to +77px. Shared GSAP context cleans up both tweens; reduced-motion skips both (code review, preference emulation not exercised).
+- Browser console errors: none. `npm run build` passed.
+- final result: passed
