@@ -54,3 +54,11 @@ Final fullscreen transition result: passed.
 
 ## Fullscreen work navigation — 2026-10-08
 GSAP transitions the persistent media container, title and description out for 0.18s, then brings the next work in over 0.34s. Previous/next directions are mirrored. Navigation is guarded while switching; close remains available and cancels pending work changes. Reduced motion switches immediately. Verified photo→video autoplay/loop without controls, video→photo original loading, reverse direction, and Escape during a transition. Production build passed.
+
+## Component and composable refactor — 2026-10-08
+App.vue is now a 22-line page shell. SiteHeader, GallerySection, WorkViewer and DownloadSection own their templates; shared preferences use a typed provider, and GSAP/ScrollTrigger is registered once. Gallery state/scrolling, modal media/navigation, footer parallax and page intro are isolated composables with lifecycle cleanup. Download URL, thumbnail geometry types and work numbering have shared modules. Existing global styling and asset paths remain in use. README documents responsibilities and component communication.
+
+Validation: TypeScript/Vite build passed. Checked 40-work gallery and 30-photo filter; native scrolling updates the counter; work-index buttons navigate; fullscreen photo opening, photo→video transition, looping muted video without controls, Escape exit, pause-on-exit and scroll restoration work. English/Chinese and light/dark changes propagate through all components. Footer photo loads with ScrollTrigger displacement. The page-root intro receives preferences explicitly to avoid injecting the provider into itself.
+
+Evidence: /Users/ssflood/Documents/works/personal/silverSalt/silver_salt/promotion_output/refactored-page.png
+Final refactor result: passed.

@@ -94,8 +94,15 @@ h1, h2, p {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 5px;
+  outline: none;
+  //outline-offset: 5px;
+}
+
+// Touch browsers may show focus-visible after dialog autofocus or focus restoration.
+@media (hover: none) and (pointer: coarse) {
+  button:focus-visible {
+    outline: none;
+  }
 }
 
 .skip-link {
