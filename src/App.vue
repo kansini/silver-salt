@@ -176,6 +176,7 @@ async function openViewer(index: number) {
     gsap.set(chrome, { opacity: 0 })
   }
   dialog.value.showModal()
+  playViewerVideo()
   if (reducedMotion.value || !media) return
   if (origin) { viewerSourceImage = origin.image; gsap.set(viewerSourceImage, { opacity: 0 }) }
   viewerMotion = gsap.timeline({ onComplete: resetViewerMotion })
@@ -235,7 +236,16 @@ function viewerKeys(event: KeyboardEvent) {
   if (event.key === 'ArrowLeft') { event.preventDefault(); changeViewer(-1) }
   if (event.key === 'ArrowRight') { event.preventDefault(); changeViewer(1) }
 }
-function visibilityChanged() { visible.value = !document.hidden; if (document.hidden) viewerVideo.value?.pause() }
+function playViewerVideo() {
+  const video = viewerVideo.value
+  if (!video) return
+  if (document.hidden || viewerClosing || !dialog.value?.open) { video.pause(); return }
+  void video.play().catch(() => { /* A browser may defer playback until media is ready. */ })
+}
+function visibilityChanged() {
+  visible.value = !document.hidden
+  if (document.hidden) viewerVideo.value?.pause(); else playViewerVideo()
+}
 function motionChanged(event: MediaQueryListEvent) { reducedMotion.value = event.matches; if (event.matches) { if (viewerClosing) finishViewer(); else resetViewerMotion() }; renderCards() }
 onMounted(async () => {
   await nextTick(); setupGallery()
@@ -302,7 +312,7 @@ onBeforeUnmount(() => {
     </main>
     <dialog ref="dialog" class="work-viewer" :aria-label="t('作品全屏查看', 'Full-screen work viewer')" @cancel.prevent="closeViewer" @close="nativeViewerClosed" @keydown="viewerKeys" @click="event => { if (event.target === dialog) closeViewer() }">
       <div key="viewer-surface" class="viewer-surface" aria-hidden="true"></div>
-      <div v-if="viewing" key="viewer-content" class="viewer-content"><div class="viewer-header"><span>{{ number((viewerIndex ?? 0) + 1) }} / {{ number(filtered.length) }} — {{ viewing.title[language] }}</span><button :aria-label="t('关闭作品', 'Close viewer')" @click="closeViewer"><AppIcon name="close" /></button></div><div class="viewer-media"><video v-if="viewing.type === 'video'" ref="viewerVideo" :key="viewing.id" :src="viewing.src" :poster="viewing.preview" controls playsinline preload="metadata"></video><img v-else :key="viewing.id" :src="viewerPhotoSource || viewing.preview" :alt="viewing.title[language]" :width="viewing.width" :height="viewing.height" /></div><div class="viewer-footer"><button :disabled="viewerIndex === 0" :aria-label="t('上一件作品', 'Previous work')" @click="changeViewer(-1)"><AppIcon name="up" /></button><p>{{ viewing.description[language] }}</p><a :href="viewing.original ?? viewing.src" target="_blank" rel="noopener noreferrer">{{ t('原始作品', 'Original work') }} <AppIcon name="arrow" /></a><button :disabled="viewerIndex === filtered.length - 1" :aria-label="t('下一件作品', 'Next work')" @click="changeViewer(1)"><AppIcon name="down" /></button></div></div>
+      <div v-if="viewing" key="viewer-content" class="viewer-content"><div class="viewer-header"><span>{{ number((viewerIndex ?? 0) + 1) }} / {{ number(filtered.length) }} — {{ viewing.title[language] }}</span><button :aria-label="t('关闭作品', 'Close viewer')" @click="closeViewer"><AppIcon name="close" /></button></div><div class="viewer-media"><video v-if="viewing.type === 'video'" ref="viewerVideo" :key="viewing.id" :src="viewing.src" :poster="viewing.preview" autoplay muted loop playsinline preload="auto" :tabindex="-1" @loadeddata="playViewerVideo"></video><img v-else :key="viewing.id" :src="viewerPhotoSource || viewing.preview" :alt="viewing.title[language]" :width="viewing.width" :height="viewing.height" /></div><div class="viewer-footer"><button :disabled="viewerIndex === 0" :aria-label="t('上一件作品', 'Previous work')" @click="changeViewer(-1)"><AppIcon name="up" /></button><p>{{ viewing.description[language] }}</p><a :href="viewing.original ?? viewing.src" target="_blank" rel="noopener noreferrer">{{ t('原始作品', 'Original work') }} <AppIcon name="arrow" /></a><button :disabled="viewerIndex === filtered.length - 1" :aria-label="t('下一件作品', 'Next work')" @click="changeViewer(1)"><AppIcon name="down" /></button></div></div>
     </dialog>
   </div>
 </template>
