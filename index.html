@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/webp" href="/assets/icon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#edede9" />
+    <meta name="theme-color" content="#1b1c1a" />
     <meta name="description" content="用银盐拍摄的照片与视频作品。让光影、纸张与记忆，在时光里显影。" />
     <meta property="og:title" content="银盐 · 日常作品集" />
     <meta property="og:description" content="用银盐拍摄的照片与视频作品。让光影、纸张与记忆，在时光里显影。" />
@@ -12,9 +12,9 @@
     <script>
       try {
         const saved = localStorage.getItem('silver-salt-theme');
-        document.documentElement.dataset.theme = saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
       } catch {
-        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = 'dark';
       }
     </script>
     <title>银盐 · 日常作品集</title>

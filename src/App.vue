@@ -15,7 +15,7 @@ const viewerVideo = ref<HTMLVideoElement>()
 function saved(key: string) { try { return localStorage.getItem(key) } catch { return null } }
 function save(key: string, value: string) { try { localStorage.setItem(key, value) } catch { /* Storage is optional. */ } }
 const language = ref<Language>(saved('silver-salt-language') === 'en' ? 'en' : 'zh')
-const theme = ref(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
+const theme = ref(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
 const t = (zh: string, en: string) => language.value === 'zh' ? zh : en
 const filter = ref<Filter>('all')
 const activeIndex = ref(0)
@@ -274,7 +274,7 @@ onBeforeUnmount(() => {
   <div ref="root" class="archive-site">
     <a class="skip-link" href="#download">{{ t('跳到下载入口', 'Skip to download') }}</a>
     <header class="masthead">
-      <a class="wordmark" href="#main" :aria-label="t('银盐首页', 'Silver Salt home')">SILVER SALT<span>©</span></a>
+      <a class="wordmark" href="#main" :aria-label="t('银盐首页', 'Silver Salt home')"><img class="brand-icon" src="/assets/app-icon.webp" alt="" width="40" height="40" /><span class="wordmark-text">SILVER SALT<sup>©</sup></span></a>
       <div class="masthead-note">{{ t('在时光里显影', 'Developed in time') }}<br />{{ t('情绪胶片相机', 'A film-inspired camera') }}</div>
       <div class="header-tools">
         <button :aria-label="t('切换至英文', 'Switch to Chinese')" class="language-toggle" @click="language = language === 'zh' ? 'en' : 'zh'"><span :class="{ selected: language === 'zh' }" lang="zh-CN">中</span> / <span :class="{ selected: language === 'en' }" lang="en">EN</span></button>
