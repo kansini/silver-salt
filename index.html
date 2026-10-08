@@ -9,6 +9,14 @@
     <meta property="og:title" content="银盐 Silver Salt · 在时光里显影" />
     <meta property="og:description" content="把平凡的今天，拍成想念。给日常，一点胶片的温度。" />
     <meta property="og:type" content="website" />
+    <script>
+      try {
+        const saved = localStorage.getItem('silver-salt-theme');
+        document.documentElement.dataset.theme = saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      } catch {
+        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+    </script>
     <title>银盐 Silver Salt · 在时光里显影</title>
   </head>
   <body><div id="app"></div><script type="module" src="/src/main.ts"></script></body>
