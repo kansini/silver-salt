@@ -621,8 +621,8 @@ h1, h2, p {
   }
 
   > svg:first-child {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
   }
 
   > svg:last-child {
@@ -1180,3 +1180,51 @@ footer {
 }
 
 .viewer-media { overflow: hidden; }
+
+
+// A transparent paper frame reveals the same landscape as the surrounding page.
+.footer-frame {
+  position: absolute;
+  top: 28%;
+  left: 7.7%;
+  width: 26%;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.download-section > .small-label,
+.download-section > h2,
+.download-section > .download-row,
+.download-section > footer {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 760px) {
+  .download-section {
+    min-height: max(100svh, 800px);
+  }
+
+  .footer-frame {
+    top: 205px;
+    left: 20px;
+    width: min(68vw, 340px);
+  }
+
+  .download-row .download-button {
+    margin-top: clamp(220px, 63vw, 430px);
+    align-self: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-frame {
+    will-change: auto;
+  }
+}

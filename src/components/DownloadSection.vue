@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AppIcon from './AppIcon.vue';
-import footerBackground from '../assets/footer_bg.jpg';
+import footerBackground from '../assets/footer_bg_1.jpg';
+import footerFrame from '../assets/frame.png';
 import { APP_STORE_URL as storeUrl } from '../config/site';
 import { useFooterParallax } from '../composables/useFooterParallax';
 import { useSitePreferences } from '../composables/useSitePreferences';
 const download = ref<HTMLElement>();
 const footerMedia = ref<HTMLElement>();
+const frame = ref<HTMLElement>();
 const { t } = useSitePreferences();
-useFooterParallax(download, footerMedia);
+useFooterParallax(download, footerMedia, frame);
 </script>
 
 <template>
   <section id="download" ref="download" class="download-section">
     <div ref="footerMedia" class="footer-background" aria-hidden="true">
       <img :src="footerBackground" alt="" width="4032" height="3024" loading="lazy" decoding="async" />
+    </div>
+    <div ref="frame" class="footer-frame" aria-hidden="true">
+      <img :src="footerFrame" alt="" width="929" height="1106" loading="lazy" decoding="async" />
     </div>
     <p class="small-label">{{ t('拍下你的日常', 'MAKE YOUR OWN ARCHIVE') }}</p>
     <h2>
