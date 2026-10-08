@@ -72,3 +72,5 @@ footer { display: flex; justify-content: space-between; align-items: center; bor
 @media (max-width: 760px) { .filter-controls button { min-height: 32px; } }
 
 .browse-controls { background: var(--paper); border-radius: 30px; padding: 5px 7px; }
+
+.download-section { min-height: 100svh; display: flex; flex-direction: column; footer { margin-top: auto; } }
