@@ -24,3 +24,22 @@ yarn preview
 参考形式：https://huyml.co/。品牌、内容、作品素材与交互为银盐独立实现。
 
 - 底部下载区域使用 `src/assets/footer_bg.jpg` 作为背景，GSAP ScrollTrigger 驱动滚动视差。深浅色遮罩保持文字可读，减少动态效果偏好下背景保持静止。
+
+- 全屏上一件／下一件支持 GSAP 方向性淡出与滑入，标题和说明同步过渡；切换期间防止重复触发，支持 Esc 打断，减少动态效果偏好下即时切换。
+
+## 代码结构
+
+`App.vue` 只负责页面组合、提供共享偏好和启动入场动画。
+
+- `components/SiteHeader.vue`：品牌、语言／主题切换和下载入口。
+- `components/GallerySection.vue`：作品画廊、筛选和索引；通过显式接口打开查看器。
+- `components/WorkViewer.vue`：全屏查看器模板，通过 props 接收作品，open-change 通知画廊暂停预览。
+- `components/DownloadSection.vue`：下载区、背景图和页尾。
+- `composables/useSitePreferences.ts`：主题／语言持久化、页面元数据、系统动态效果偏好与页面可见性；由根组件提供，子组件共享。
+- `composables/useGallery.ts`：筛选状态、滚动定位、卡片 GSAP 动画及尺寸监听。
+- `composables/useWorkViewer.ts`：照片加载、视频播放、全屏开关／切换动画和键盘交互。
+- `composables/useFooterParallax.ts`、`usePageIntro.ts`：底部视差与页面入场动画。
+- `lib/motion.ts`：GSAP 和 ScrollTrigger 注册入口。
+- `config/site.ts`、`types/gallery.ts`、`utils/format.ts`：下载地址、交互类型和序号格式。
+
+动画、ResizeObserver 与浏览器监听器在各自所属组件的生命周期内创建和清理。现有全局 SCSS 继续统一管理布局与响应式样式。

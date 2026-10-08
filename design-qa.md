@@ -51,3 +51,6 @@ Added GSAP photo entrance (0.55s) from the painted thumbnail bounds, and return 
 Production validation: opening, early Escape exit, reopening after exit, original photo loading, thumbnail restoration and scrollY=0 passed. Keyed surface/content containers preserve one background and one footer across repeated open/close cycles. Photo/video arrow navigation preserves video controls and clears old animation styles. TypeScript/Vite build passed.
 Evidence: /Users/ssflood/Documents/works/personal/silverSalt/silver_salt/promotion_output/viewer-transition.png
 Final fullscreen transition result: passed.
+
+## Fullscreen work navigation — 2026-10-08
+GSAP transitions the persistent media container, title and description out for 0.18s, then brings the next work in over 0.34s. Previous/next directions are mirrored. Navigation is guarded while switching; close remains available and cancels pending work changes. Reduced motion switches immediately. Verified photo→video autoplay/loop without controls, video→photo original loading, reverse direction, and Escape during a transition. Production build passed.

@@ -1157,6 +1157,7 @@ footer {
 
 :root[data-theme='dark'] .download-section {
   --footer-shade: 27, 28, 26;
+  --muted: #e1e6d9;
 }
 
 @media (max-width: 760px) {
@@ -1170,3 +1171,5 @@ footer {
     will-change: auto;
   }
 }
+
+.viewer-media { overflow: hidden; }
