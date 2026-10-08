@@ -22,3 +22,5 @@ yarn preview
 - App Store 下载链接在 `src/App.vue`。
 
 参考形式：https://huyml.co/。品牌、内容、作品素材与交互为银盐独立实现。
+
+- 底部下载区域使用 `src/assets/footer_bg.jpg` 作为背景，GSAP ScrollTrigger 驱动滚动视差。深浅色遮罩保持文字可读，减少动态效果偏好下背景保持静止。

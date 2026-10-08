@@ -4,12 +4,15 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import AppIcon from './components/AppIcon.vue'
 import { gallery } from './gallery'
+import footerBackground from './assets/footer_bg.jpg'
 
 gsap.registerPlugin(ScrollTrigger)
 type Language = 'zh' | 'en'
 type Filter = 'all' | 'photo' | 'video'
 const root = ref<HTMLElement>()
 const archive = ref<HTMLElement>()
+const download = ref<HTMLElement>()
+const footerMedia = ref<HTMLElement>()
 const dialog = ref<HTMLDialogElement>()
 const viewerVideo = ref<HTMLVideoElement>()
 function saved(key: string) { try { return localStorage.getItem(key) } catch { return null } }
@@ -35,6 +38,7 @@ const filters: { id: Filter; zh: string; en: string }[] = [
 const storeUrl = 'https://apps.apple.com/app/id6767806037'
 const number = (value: number) => String(value).padStart(2, '0')
 let animation: gsap.core.Tween | undefined
+let footerParallax: gsap.core.Tween | undefined
 let intro: gsap.Context | undefined
 let preferenceMedia: MediaQueryList | undefined
 let observer: ResizeObserver | undefined
@@ -246,9 +250,26 @@ function visibilityChanged() {
   visible.value = !document.hidden
   if (document.hidden) viewerVideo.value?.pause(); else playViewerVideo()
 }
-function motionChanged(event: MediaQueryListEvent) { reducedMotion.value = event.matches; if (event.matches) { if (viewerClosing) finishViewer(); else resetViewerMotion() }; renderCards() }
+function setupFooterParallax() {
+  footerParallax?.scrollTrigger?.kill(); footerParallax?.kill()
+  if (!footerMedia.value || !download.value) return
+  gsap.set(footerMedia.value, { clearProps: 'transform' })
+  if (reducedMotion.value) return
+  footerParallax = gsap.fromTo(footerMedia.value,
+    { y: () => -(download.value?.offsetHeight ?? 0) * .12 },
+    {
+      y: () => (download.value?.offsetHeight ?? 0) * .12,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: download.value, start: 'top bottom', end: 'bottom top', scrub: .6,
+        invalidateOnRefresh: true,
+      },
+    },
+  )
+}
+function motionChanged(event: MediaQueryListEvent) { reducedMotion.value = event.matches; if (event.matches) { if (viewerClosing) finishViewer(); else resetViewerMotion() }; renderCards(); setupFooterParallax() }
 onMounted(async () => {
-  await nextTick(); setupGallery()
+  await nextTick(); setupGallery(); setupFooterParallax()
   preferenceMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
   preferenceMedia.addEventListener('change', motionChanged)
   document.addEventListener('visibilitychange', visibilityChanged)
@@ -264,6 +285,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   ++viewerMotionVersion; resetViewerMotion(); viewerVideo.value?.pause(); dialog.value?.close()
   if (viewerSourceImage) gsap.set(viewerSourceImage, { clearProps: 'opacity' })
+  footerParallax?.scrollTrigger?.kill(); footerParallax?.kill()
   animation?.scrollTrigger?.kill(); animation?.kill(); intro?.revert(); observer?.disconnect(); refreshTimer?.kill()
   preferenceMedia?.removeEventListener('change', motionChanged)
   document.removeEventListener('visibilitychange', visibilityChanged)
@@ -308,7 +330,7 @@ onBeforeUnmount(() => {
           <div class="gallery-bottom"><div class="counter"><span class="small-label">{{ t('当前作品', 'SELECTED WORK') }}</span><strong>{{ number(activeIndex + 1) }}</strong><small>/ {{ number(filtered.length) }}</small></div><div class="browse-controls"><button :disabled="activeIndex === 0" :aria-label="t('上一件作品', 'Previous work')" @click="goTo(activeIndex - 1)"><AppIcon name="up" /></button><span>{{ t('滚动，慢慢看。', 'SCROLL TO EXPLORE') }}</span><button :disabled="activeIndex === filtered.length - 1" :aria-label="t('下一件作品', 'Next work')" @click="goTo(activeIndex + 1)"><AppIcon name="down" /></button></div><a class="bottom-download" href="#download">{{ t('你的下一张，从这里开始', 'Your next frame starts here') }} <AppIcon name="arrow" /></a></div>
         </div>
       </section>
-      <section id="download" class="download-section"><p class="small-label">{{ t('拍下你的日常', 'MAKE YOUR OWN ARCHIVE') }}</p><h2>{{ t('下一张，', 'The next frame,') }}<br /><span>{{ t('是你的故事。', 'your story.') }}</span></h2><div class="download-row"><p>{{ t('照片、短片、胶片色彩。', 'Photos. Films. A little film feeling.') }}<br />{{ t('把眼前的生活，留给以后的自己。', 'Keep a piece of today for your future self.') }}</p><a class="download-button" :href="storeUrl" target="_blank" rel="noopener noreferrer"><AppIcon name="apple" /><span><small>Download on the</small>App Store</span><AppIcon name="arrow" /></a></div><footer><a href="#main">SILVER SALT © {{ new Date().getFullYear() }}</a><span>{{ t('在时光里显影', 'Developed in time') }}</span><a href="#main">{{ t('回到作品', 'Back to the archive') }} <AppIcon name="up" /></a></footer></section>
+      <section id="download" ref="download" class="download-section"><div ref="footerMedia" class="footer-background" aria-hidden="true"><img :src="footerBackground" alt="" width="4032" height="3024" loading="lazy" decoding="async" /></div><p class="small-label">{{ t('拍下你的日常', 'MAKE YOUR OWN ARCHIVE') }}</p><h2>{{ t('下一张，', 'The next frame,') }}<br /><span>{{ t('是你的故事。', 'your story.') }}</span></h2><div class="download-row"><p>{{ t('照片、短片、胶片色彩。', 'Photos. Films. A little film feeling.') }}<br />{{ t('把眼前的生活，留给以后的自己。', 'Keep a piece of today for your future self.') }}</p><a class="download-button" :href="storeUrl" target="_blank" rel="noopener noreferrer"><AppIcon name="apple" /><span><small>Download on the</small>App Store</span><AppIcon name="arrow" /></a></div><footer><a href="#main">SILVER SALT © {{ new Date().getFullYear() }}</a><span>{{ t('在时光里显影', 'Developed in time') }}</span><a href="#main">{{ t('回到作品', 'Back to the archive') }} <AppIcon name="up" /></a></footer></section>
     </main>
     <dialog ref="dialog" class="work-viewer" :aria-label="t('作品全屏查看', 'Full-screen work viewer')" @cancel.prevent="closeViewer" @close="nativeViewerClosed" @keydown="viewerKeys" @click="event => { if (event.target === dialog) closeViewer() }">
       <div key="viewer-surface" class="viewer-surface" aria-hidden="true"></div>
