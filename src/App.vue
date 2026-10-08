@@ -41,6 +41,57 @@ let observer: ResizeObserver | undefined
 let refreshTimer: gsap.core.Tween | undefined
 const progress = { value: 0 }
 let viewerScrollPosition = 0
+let viewerMotion: gsap.core.Timeline | undefined
+let viewerMotionVersion = 0
+let viewerClosing = false
+let expectedViewerCloses = 0
+let viewerSourceImage: HTMLImageElement | undefined
+const viewerPhotoSource = ref('')
+
+watch(viewing, async item => {
+  if (item?.type !== 'photo') return
+  viewerPhotoSource.value = item.preview
+  const image = new Image()
+  image.src = item.src
+  try {
+    await image.decode()
+    if (viewing.value === item && !viewerClosing) viewerPhotoSource.value = item.src
+  } catch { /* Keep the lightweight preview if the original cannot load. */ }
+})
+
+function resetViewerMotion() {
+  viewerMotion?.kill(); viewerMotion = undefined
+  if (!dialog.value) return
+  gsap.set(dialog.value.querySelectorAll('.viewer-surface, .viewer-header, .viewer-footer, .viewer-media img, .viewer-media video'), { clearProps: 'transform,opacity' })
+}
+function photoOrigin(index: number) {
+  const card = root.value?.querySelectorAll<HTMLElement>('.work-card')[index]
+  const image = card?.querySelector('img')
+  if (!card || !image || card.style.visibility === 'hidden') return null
+  const rect = image.getBoundingClientRect()
+  if (rect.bottom <= 0 || rect.top >= window.innerHeight) return null
+  // object-fit:contain leaves empty space inside the thumbnail element.
+  const item = filtered.value[index]!
+  const fit = Math.min(image.offsetWidth / item.width, image.offsetHeight / item.height)
+  const scale = Number(gsap.getProperty(card, 'scaleX')) || 1
+  const width = item.width * fit * scale
+  const height = item.height * fit * scale
+  return {
+    rect: { left: rect.left + (rect.width - width) / 2, top: rect.top + (rect.height - height) / 2, width, height },
+    rotation: Number(gsap.getProperty(card, 'rotation')) || 0,
+    image,
+  }
+}
+function photoTransform(image: Element, origin: NonNullable<ReturnType<typeof photoOrigin>>) {
+  const rect = image.getBoundingClientRect()
+  return {
+    x: origin.rect.left + origin.rect.width / 2 - rect.left - rect.width / 2,
+    y: origin.rect.top + origin.rect.height / 2 - rect.top - rect.height / 2,
+    scaleX: origin.rect.width / rect.width,
+    scaleY: origin.rect.height / rect.height,
+    rotation: origin.rotation,
+  }
+}
 
 watch(theme, value => {
   document.documentElement.dataset.theme = value
@@ -95,7 +146,7 @@ function setupGallery() {
 }
 async function setFilter(value: Filter) {
   if (value === filter.value) return
-  closeViewer(); filter.value = value
+  finishViewer(); filter.value = value
   await nextTick(); setupGallery()
   window.scrollTo({ top: archive.value?.offsetTop ?? 0, behavior: 'instant' })
 }
@@ -106,21 +157,78 @@ function goTo(index: number) {
   const target = trigger.start + (trigger.end - trigger.start) * index / Math.max(1, filtered.value.length - 1)
   window.scrollTo({ top: target, behavior: reducedMotion.value ? 'instant' : 'smooth' })
 }
-function openViewer(index: number) {
+async function openViewer(index: number) {
+  if (viewerIndex.value !== null) return
+  const origin = filtered.value[index]?.type === 'photo' ? photoOrigin(index) : null
+  const version = ++viewerMotionVersion
   viewerScrollPosition = window.scrollY
+  viewerClosing = false
   viewerIndex.value = index
-  dialog.value?.showModal()
+  await nextTick()
+  if (version !== viewerMotionVersion || !dialog.value || viewerIndex.value === null) return
+  resetViewerMotion()
+  const media = dialog.value.querySelector('.viewer-media img, .viewer-media video')
+  const surface = dialog.value.querySelector('.viewer-surface')
+  const chrome = dialog.value.querySelectorAll('.viewer-header, .viewer-footer')
+  // Set hidden styles before entering the top layer to avoid a single-frame flash.
+  if (!reducedMotion.value) {
+    if (surface) gsap.set(surface, { opacity: 0 })
+    gsap.set(chrome, { opacity: 0 })
+  }
+  dialog.value.showModal()
+  if (reducedMotion.value || !media) return
+  if (origin) { viewerSourceImage = origin.image; gsap.set(viewerSourceImage, { opacity: 0 }) }
+  viewerMotion = gsap.timeline({ onComplete: resetViewerMotion })
+    .to(surface, { opacity: 1, duration: .38, ease: 'power2.out' }, 0)
+    .fromTo(media, origin ? photoTransform(media, origin) : { scale: .94, y: 18, opacity: 0 }, { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, duration: .55, ease: 'power3.inOut' }, 0)
+    .fromTo(chrome, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: .28, stagger: .04, ease: 'power2.out' }, .22)
 }
 
-function closeViewer() {
+function finishViewer() {
   const wasViewing = viewerIndex.value !== null
-  viewerVideo.value?.pause(); dialog.value?.close(); viewerIndex.value = null
+  ++viewerMotionVersion
+  resetViewerMotion()
+  viewerVideo.value?.pause()
+  if (viewerSourceImage) gsap.set(viewerSourceImage, { clearProps: 'opacity' })
+  viewerSourceImage = undefined
+  if (dialog.value?.open) { expectedViewerCloses++; dialog.value.close() }
+  viewerIndex.value = null
+  viewerClosing = false
   if (wasViewing) window.scrollTo({ top: viewerScrollPosition, behavior: 'instant' })
 }
+function closeViewer() {
+  if (viewerIndex.value === null || viewerClosing) return
+  viewerClosing = true
+  ++viewerMotionVersion
+  viewerVideo.value?.pause()
+  viewerMotion?.kill()
+  if (reducedMotion.value || !dialog.value?.open) { finishViewer(); return }
+  const media = dialog.value.querySelector('.viewer-media img, .viewer-media video')
+  const origin = viewing.value?.type === 'photo' && viewerIndex.value === activeIndex.value ? photoOrigin(viewerIndex.value) : null
+  // Measure the untransformed fullscreen image even when closing during its entrance.
+  const transform = media && origin ? (() => {
+    const previous = Object.fromEntries(['x', 'y', 'scaleX', 'scaleY', 'rotation', 'opacity'].map(property => [property, gsap.getProperty(media, property)]))
+    gsap.set(media, { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 })
+    const target = photoTransform(media, origin)
+    gsap.set(media, previous)
+    return target
+  })() : { scale: .95, y: 12, opacity: 0 }
+  viewerMotion = gsap.timeline({ onComplete: finishViewer })
+    .to(dialog.value.querySelectorAll('.viewer-header, .viewer-footer'), { opacity: 0, y: 6, duration: .18, ease: 'power2.in' }, 0)
+    .to(dialog.value.querySelector('.viewer-surface'), { opacity: 0, duration: .35, ease: 'power2.inOut' }, .04)
+  if (media) viewerMotion.to(media, { ...transform, duration: .42, ease: 'power3.inOut' }, 0)
+}
+function nativeViewerClosed() {
+  // Native close events are queued; an older event must not cancel a new opening.
+  if (expectedViewerCloses > 0) { expectedViewerCloses--; return }
+  if (!dialog.value?.open) finishViewer()
+}
 function changeViewer(direction: number) {
-  if (viewerIndex.value === null) return
+  if (viewerIndex.value === null || viewerClosing) return
   const target = viewerIndex.value + direction
-  if (target >= 0 && target < filtered.value.length) { viewerVideo.value?.pause(); viewerIndex.value = target }
+  if (target >= 0 && target < filtered.value.length) {
+    resetViewerMotion(); viewerVideo.value?.pause(); viewerIndex.value = target
+  }
 }
 function viewerKeys(event: KeyboardEvent) {
   if (event.target instanceof HTMLVideoElement) return
@@ -128,7 +236,7 @@ function viewerKeys(event: KeyboardEvent) {
   if (event.key === 'ArrowRight') { event.preventDefault(); changeViewer(1) }
 }
 function visibilityChanged() { visible.value = !document.hidden; if (document.hidden) viewerVideo.value?.pause() }
-function motionChanged(event: MediaQueryListEvent) { reducedMotion.value = event.matches; renderCards() }
+function motionChanged(event: MediaQueryListEvent) { reducedMotion.value = event.matches; if (event.matches) { if (viewerClosing) finishViewer(); else resetViewerMotion() }; renderCards() }
 onMounted(async () => {
   await nextTick(); setupGallery()
   preferenceMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -144,6 +252,8 @@ onMounted(async () => {
   }, root.value)
 })
 onBeforeUnmount(() => {
+  ++viewerMotionVersion; resetViewerMotion(); viewerVideo.value?.pause(); dialog.value?.close()
+  if (viewerSourceImage) gsap.set(viewerSourceImage, { clearProps: 'opacity' })
   animation?.scrollTrigger?.kill(); animation?.kill(); intro?.revert(); observer?.disconnect(); refreshTimer?.kill()
   preferenceMedia?.removeEventListener('change', motionChanged)
   document.removeEventListener('visibilitychange', visibilityChanged)
@@ -190,8 +300,9 @@ onBeforeUnmount(() => {
       </section>
       <section id="download" class="download-section"><p class="small-label">{{ t('拍下你的日常', 'MAKE YOUR OWN ARCHIVE') }}</p><h2>{{ t('下一张，', 'The next frame,') }}<br /><span>{{ t('是你的故事。', 'your story.') }}</span></h2><div class="download-row"><p>{{ t('照片、短片、胶片色彩。', 'Photos. Films. A little film feeling.') }}<br />{{ t('把眼前的生活，留给以后的自己。', 'Keep a piece of today for your future self.') }}</p><a class="download-button" :href="storeUrl" target="_blank" rel="noopener noreferrer"><AppIcon name="apple" /><span><small>Download on the</small>App Store</span><AppIcon name="arrow" /></a></div><footer><a href="#main">SILVER SALT © {{ new Date().getFullYear() }}</a><span>{{ t('在时光里显影', 'Developed in time') }}</span><a href="#main">{{ t('回到作品', 'Back to the archive') }} <AppIcon name="up" /></a></footer></section>
     </main>
-    <dialog ref="dialog" class="work-viewer" :aria-label="t('作品全屏查看', 'Full-screen work viewer')" @close="closeViewer" @keydown="viewerKeys" @click="event => { if (event.target === dialog) closeViewer() }">
-      <template v-if="viewing"><div class="viewer-header"><span>{{ number((viewerIndex ?? 0) + 1) }} / {{ number(filtered.length) }} — {{ viewing.title[language] }}</span><button :aria-label="t('关闭作品', 'Close viewer')" @click="closeViewer"><AppIcon name="close" /></button></div><div class="viewer-media"><video v-if="viewing.type === 'video'" ref="viewerVideo" :key="viewing.id" :src="viewing.src" :poster="viewing.preview" controls playsinline preload="metadata"></video><img v-else :key="viewing.id" :src="viewing.src" :alt="viewing.title[language]" :width="viewing.width" :height="viewing.height" /></div><div class="viewer-footer"><button :disabled="viewerIndex === 0" :aria-label="t('上一件作品', 'Previous work')" @click="changeViewer(-1)"><AppIcon name="up" /></button><p>{{ viewing.description[language] }}</p><a :href="viewing.original ?? viewing.src" target="_blank" rel="noopener noreferrer">{{ t('原始作品', 'Original work') }} <AppIcon name="arrow" /></a><button :disabled="viewerIndex === filtered.length - 1" :aria-label="t('下一件作品', 'Next work')" @click="changeViewer(1)"><AppIcon name="down" /></button></div></template>
+    <dialog ref="dialog" class="work-viewer" :aria-label="t('作品全屏查看', 'Full-screen work viewer')" @cancel.prevent="closeViewer" @close="nativeViewerClosed" @keydown="viewerKeys" @click="event => { if (event.target === dialog) closeViewer() }">
+      <div key="viewer-surface" class="viewer-surface" aria-hidden="true"></div>
+      <div v-if="viewing" key="viewer-content" class="viewer-content"><div class="viewer-header"><span>{{ number((viewerIndex ?? 0) + 1) }} / {{ number(filtered.length) }} — {{ viewing.title[language] }}</span><button :aria-label="t('关闭作品', 'Close viewer')" @click="closeViewer"><AppIcon name="close" /></button></div><div class="viewer-media"><video v-if="viewing.type === 'video'" ref="viewerVideo" :key="viewing.id" :src="viewing.src" :poster="viewing.preview" controls playsinline preload="metadata"></video><img v-else :key="viewing.id" :src="viewerPhotoSource || viewing.preview" :alt="viewing.title[language]" :width="viewing.width" :height="viewing.height" /></div><div class="viewer-footer"><button :disabled="viewerIndex === 0" :aria-label="t('上一件作品', 'Previous work')" @click="changeViewer(-1)"><AppIcon name="up" /></button><p>{{ viewing.description[language] }}</p><a :href="viewing.original ?? viewing.src" target="_blank" rel="noopener noreferrer">{{ t('原始作品', 'Original work') }} <AppIcon name="arrow" /></a><button :disabled="viewerIndex === filtered.length - 1" :aria-label="t('下一件作品', 'Next work')" @click="changeViewer(1)"><AppIcon name="down" /></button></div></div>
     </dialog>
   </div>
 </template>
