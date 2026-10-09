@@ -45,7 +45,7 @@ defineExpose({ open: openViewer, finish: finishViewer });
           <AppIcon name="close" />
         </button>
       </div>
-      <div class="viewer-media" :aria-busy="viewerSwitching">
+      <div class="viewer-media" :aria-busy="viewerSwitching" @click="closeViewer">
         <video
           v-if="viewing.type === 'video'"
           :ref="setViewerVideo"
