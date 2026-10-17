@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import AppIcon from './AppIcon.vue';
+import ThemeToggleIcon from './ThemeToggleIcon.vue';
+import { useThemeTransition } from '../composables/useThemeTransition';
 import { APP_STORE_URL as storeUrl } from '../config/site';
 import { useSitePreferences } from '../composables/useSitePreferences';
 const { language, theme, t } = useSitePreferences();
+const { toggleTheme, transitioning } = useThemeTransition();
 </script>
 
 <template>
@@ -33,9 +36,10 @@ const { language, theme, t } = useSitePreferences();
         class="theme-toggle"
         :aria-label="theme === 'light' ? t('切换至深色模式', 'Switch to dark mode') : t('切换至浅色模式', 'Switch to light mode')"
         :aria-pressed="theme === 'dark'"
-        @click="theme = theme === 'light' ? 'dark' : 'light'"
+        :aria-disabled="transitioning"
+        @click="toggleTheme"
       >
-        <AppIcon :name="theme === 'light' ? 'moon' : 'sun'" />
+        <ThemeToggleIcon :dark="theme === 'dark'" />
       </button>
       <a :href="storeUrl" class="header-download" target="_blank" rel="noopener noreferrer">
         {{ t('下载银盐', 'Get the app') }}

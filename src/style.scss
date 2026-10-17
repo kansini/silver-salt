@@ -201,8 +201,8 @@ h1, h2, p {
   place-items: center;
 
   svg {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -1231,4 +1231,56 @@ footer {
 
 .download-row > p {
   padding-left: clamp(16px, 1vw, 20px);
+}
+
+
+// Snapshot only the theme control separately, so its morph stays above the ink.
+.theme-toggle {
+  view-transition-name: theme-control;
+}
+
+.theme-ink-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+html.theme-ink-transition::view-transition-group(*) {
+  animation-duration: 600ms;
+}
+
+html.theme-ink-transition::view-transition-old(root),
+html.theme-ink-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.theme-ink-transition::view-transition-old(root) {
+  z-index: 1;
+}
+
+html.theme-ink-transition::view-transition-new(root) {
+  z-index: 2;
+}
+
+html.theme-ink-transition::view-transition-group(theme-control) {
+  z-index: 3;
+}
+
+html.theme-ink-transition::view-transition-old(theme-control) {
+  animation: theme-symbol-out 600ms ease-in-out both;
+}
+
+html.theme-ink-transition::view-transition-new(theme-control) {
+  animation: theme-symbol-in 600ms ease-in-out both;
+}
+
+@keyframes theme-symbol-out {
+  to { opacity: 0; transform: rotate(100deg) scale(.35); filter: blur(2px); }
+}
+
+@keyframes theme-symbol-in {
+  from { opacity: 0; transform: rotate(-100deg) scale(.35); filter: blur(2px); }
+  to { opacity: 1; transform: rotate(0) scale(1); filter: blur(0); }
 }
